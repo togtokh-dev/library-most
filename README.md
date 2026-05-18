@@ -1,8 +1,144 @@
-# most
+# @togtokh.dev/most
 
+MOST QR төлбөрийн Node.js/TypeScript library.
 
+## Суулгах
 
-## Getting started
+```bash
+npm install @togtokh.dev/most
+```
+
+## Тохиргоо
+
+| Талбар | Тайлбар | Заавал |
+|---|---|---|
+| `apiKey` | MOST-оос олгосон APIKEY | Тийм |
+| `payeeCode` | Мерчантын код (жишээ: `ME_402695`) | Тийм |
+| `posNo` | POS дугаар (default: `"1"`) | Үгүй |
+| `host` | API хаяг (default: тест орчин) | Үгүй |
+| `lang` | Хариуны хэл: `MN` / `EN` / `ZH` (default: `MN`) | Үгүй |
+
+---
+
+## Хэрэглэх
+
+### Тохируулах (init)
+
+```typescript
+import MOST from "@togtokh.dev/most";
+
+MOST.init({
+  apiKey: "your_api_key",
+  payeeCode: "ME_402695",
+  posNo: "1",
+});
+```
+
+---
+
+### 1. QR үүсгэх (CREATE)
+
+```typescript
+const res = await MOST.invoice.CREATE({
+  tranAmnt: 1000,
+  tranCur: "MNT",
+  tranDesc: "Захиалга #1234",
+  invoiceId: "ORDER_001",
+  paidLimit: 1,
+});
+
+// res.data.qrCode   — QR EMV raw текст
+// res.data.qrLink   — Happy Wallet deeplink URL
+```
+
+**Request параметрүүд:**
+
+| Нэр | Төрөл | Заавал | Тайлбар |
+|---|---|---|---|
+| `tranAmnt` | number | Тийм | Гүйлгээний дүн |
+| `tranDesc` | string | Тийм | Гүйлгээний тайлбар |
+| `invoiceId` | string | Тийм | Мерчантын дотоод нэхэмжлэхийн дугаар |
+| `tranCur` | string | Үгүй | Валютийн код (default: `"MNT"`) |
+| `paidLimit` | number | Үгүй | Төлөх боломжийн тоо (default: `1`) |
+
+---
+
+### 2. Төлөв шалгах (CHECK)
+
+```typescript
+const res = await MOST.invoice.CHECK(qrCode);
+// эсвэл олон QR зэрэг шалгах
+const res = await MOST.invoice.CHECK([qrCode1, qrCode2]);
+
+// res.data[0].paymentId    — Төлбөрийн ID (төлөгдсөн үед)
+// res.data[0].tranAmnt     — Гүйлгээний дүн
+// res.data[0].responseCode — 0 = төлөгдсөн
+// res.data[0].responseDesc — Төлөвийн тайлбар
+```
+
+---
+
+### 3. QR цуцлах (CANCEL)
+
+```typescript
+const res = await MOST.invoice.CANCEL(qrCode);
+
+// res.data[0].responseCode — 0 = амжилттай цуцлагдсан
+// res.data[0].responseDesc — "QR код цуцлагдаа!"
+```
+
+---
+
+## Response код
+
+| responseCode | Утга |
+|---|---|
+| `0` | Амжилттай |
+| бусад | Алдаа — `responseDesc`-с тайлбар харах |
+
+---
+
+## Бүрэн жишээ
+
+```typescript
+import MOST from "@togtokh.dev/most";
+
+MOST.init({
+  apiKey: "xWTLEMvSJqnYoTHHpJByNFpROWWAUl",
+  payeeCode: "ME_402695",
+  posNo: "1",
+});
+
+async function pay() {
+  const created = await MOST.invoice.CREATE({
+    tranAmnt: 5000,
+    tranDesc: "Захиалга #1234",
+    invoiceId: "ORDER_1234",
+  });
+
+  if (!created.success || !created.data) {
+    console.error(created.message);
+    return;
+  }
+
+  console.log("QR:", created.data.qrCode);
+  console.log("Link:", created.data.qrLink);
+
+  const checked = await MOST.invoice.CHECK(created.data.qrCode);
+  if (checked.data?.[0]?.responseCode === 0) {
+    console.log("Төлбөр амжилттай, ID:", checked.data[0].paymentId);
+  } else {
+    console.log("Төлөв:", checked.data?.[0]?.responseDesc);
+  }
+}
+
+pay();
+```
+
+---
+
+## Getting started (GitLab)
+
 
 To make it easy for you to get started with GitLab, here's a list of recommended next steps.
 
