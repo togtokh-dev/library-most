@@ -51,6 +51,14 @@ export const logAxios =
     );
   };
 
+export const host: {
+  STAGING: "http://202.21.105.150:40652/resources/merch/v1.0";
+  PROD: "https://qrservice.mostmoney.mn/resources/merch/v1.0";
+} = {
+  STAGING: "http://202.21.105.150:40652/resources/merch/v1.0",
+  PROD: "https://qrservice.mostmoney.mn/resources/merch/v1.0"
+};
+
 export const config: {
   /** MOST-оос олгосон APIKEY */
   apiKey: string;
@@ -67,24 +75,30 @@ export const config: {
   apiKey: "",
   payeeCode: "",
   posNo: "1",
-  host: "http://202.21.105.150:40652/resources/merch/v1.0",
+  host: host.STAGING,
   lang: "MN",
   logger: true
 };
 
-/** MOST QR систем тохируулах */
-export const init = (body: {
-  apiKey: string;
-  payeeCode: string;
-  posNo?: string;
-  host?: string;
-  lang?: "MN" | "EN" | "ZH";
-  logger?: boolean;
-}): void => {
+/** MOST QR систем тохируулах — host тусдаа эхний параметр */
+export const init = (
+  /** "STAGING" | "PROD" эсвэл custom URL */
+  hostValue: "STAGING" | "PROD" | string,
+  body: {
+    apiKey: string;
+    payeeCode: string;
+    posNo?: string;
+    lang?: "MN" | "EN" | "ZH";
+    logger?: boolean;
+  }
+): void => {
+  config.host =
+    hostValue === "STAGING" || hostValue === "PROD"
+      ? host[hostValue]
+      : hostValue;
   config.apiKey = body.apiKey;
   config.payeeCode = body.payeeCode;
   if (body.posNo) config.posNo = body.posNo;
-  if (body.host) config.host = body.host;
   if (body.lang) config.lang = body.lang;
   if (body.logger !== undefined) config.logger = body.logger;
 };

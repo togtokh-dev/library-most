@@ -1,7 +1,7 @@
 import MOST from "../src/index";
 
 // Тохиргоо
-MOST.init({
+MOST.init("STAGING", {
   apiKey: "xWTLEMvSJqnYoTHHpJByNFpROWWAUl",
   payeeCode: "ME_402695",
   posNo: "1",

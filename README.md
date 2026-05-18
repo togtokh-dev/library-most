@@ -8,14 +8,21 @@ MOST QR төлбөрийн Node.js/TypeScript library.
 npm install @togtokh.dev/most
 ```
 
+## Орчин
+
+| Нэр | URL |
+|---|---|
+| `STAGING` | `http://202.21.105.150:40652/resources/merch/v1.0` |
+| `PROD` | `https://qrservice.mostmoney.mn/resources/merch/v1.0` |
+
 ## Тохиргоо
 
 | Талбар | Тайлбар | Заавал |
 |---|---|---|
+| `host` | `"STAGING"` \| `"PROD"` \| custom URL | Тийм |
 | `apiKey` | MOST-оос олгосон APIKEY | Тийм |
 | `payeeCode` | Мерчантын код (жишээ: `ME_402695`) | Тийм |
 | `posNo` | POS дугаар (default: `"1"`) | Үгүй |
-| `host` | API хаяг (default: тест орчин) | Үгүй |
 | `lang` | Хариуны хэл: `MN` / `EN` / `ZH` (default: `MN`) | Үгүй |
 
 ---
@@ -27,7 +34,7 @@ npm install @togtokh.dev/most
 ```typescript
 import MOST from "@togtokh.dev/most";
 
-MOST.init({
+MOST.init("STAGING", {  // "STAGING" | "PROD" | custom URL
   apiKey: "your_api_key",
   payeeCode: "ME_402695",
   posNo: "1",
@@ -104,6 +111,7 @@ const res = await MOST.invoice.CANCEL(qrCode);
 import MOST from "@togtokh.dev/most";
 
 MOST.init({
+  host: "STAGING",
   apiKey: "xWTLEMvSJqnYoTHHpJByNFpROWWAUl",
   payeeCode: "ME_402695",
   posNo: "1",
