@@ -1,6 +1,6 @@
 {
   "name": "@togtokh.dev/most",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "MOST QR payment API library",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

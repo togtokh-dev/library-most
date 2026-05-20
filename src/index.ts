@@ -53,10 +53,10 @@ export const logAxios =
 
 export const host: {
   STAGING: "http://202.21.105.150:40652/resources/merch/v1.0";
-  PROD: "https://qrservice.mostmoney.mn/resources/merch/v1.0";
+  PROD: "https://j2me.mostmoney.mn:9092/resources/merch/v1.0";
 } = {
   STAGING: "http://202.21.105.150:40652/resources/merch/v1.0",
-  PROD: "https://qrservice.mostmoney.mn/resources/merch/v1.0"
+  PROD: "https://j2me.mostmoney.mn:9092/resources/merch/v1.0"
 };
 
 export const config: {
