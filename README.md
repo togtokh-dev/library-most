@@ -1,127 +1,45 @@
-# @togtokh.dev/most
+# MOST
 
-MOST QR төлбөрийн Node.js/TypeScript library.
+MOST Money QR payment gateway client for Node.js & TypeScript — create QR invoices and check payment status against the Mongolian MOST Money merchant API.
 
-## Суулгах
+## Install
 
 ```bash
-npm install @togtokh.dev/most
+npm i @togtokh.dev/most
 ```
 
-## Орчин
+## Features
 
-| Нэр | URL |
-|---|---|
-| `STAGING` | `http://202.21.105.150:40652/resources/merch/v1.0` |
-| `PROD` | `https://qrservice.mostmoney.mn/resources/merch/v1.0` |
+- **Configure once** — `init(host, config)` sets the API base URL, API key, merchant (payee) code, POS number, response language and logging for all subsequent calls.
+- **Built-in environments** — `STAGING` and `PROD` hosts are predefined; a custom base URL is also accepted.
+- **QR invoice create** — generate a MOST Money EMV QR code and Happy Wallet deeplink for a transaction.
+- **Payment status check** — query the status of one or many QR codes (payment id, transaction details, loyalty and bank info).
+- **QR cancel** — cancel one or many previously created QR codes.
+- **Helpers** — `parseErr` for normalizing errors into a message string and `logAxios` for optional request/response logging.
+- Fully typed, with every response following one consistent `{ success, message, data? }` envelope.
 
-## Тохиргоо
+## Quick start
 
-| Талбар | Тайлбар | Заавал |
-|---|---|---|
-| `host` | `"STAGING"` \| `"PROD"` \| custom URL | Тийм |
-| `apiKey` | MOST-оос олгосон APIKEY | Тийм |
-| `payeeCode` | Мерчантын код (жишээ: `ME_402695`) | Тийм |
-| `posNo` | POS дугаар (default: `"1"`) | Үгүй |
-| `lang` | Хариуны хэл: `MN` / `EN` / `ZH` (default: `MN`) | Үгүй |
-
----
-
-## Хэрэглэх
-
-### Тохируулах (init)
-
-```typescript
+```ts
 import MOST from "@togtokh.dev/most";
 
-MOST.init("STAGING", {  // "STAGING" | "PROD" | custom URL
-  apiKey: "your_api_key",
-  payeeCode: "ME_402695",
+// 1. Configure (host is the first argument: "STAGING" | "PROD" | custom URL)
+MOST.init("STAGING", {
+  apiKey: "YOUR_API_KEY",
+  payeeCode: "ME_000000",
   posNo: "1",
-});
-```
-
----
-
-### 1. QR үүсгэх (CREATE)
-
-```typescript
-const res = await MOST.invoice.CREATE({
-  tranAmnt: 1000,
-  tranCur: "MNT",
-  tranDesc: "Захиалга #1234",
-  invoiceId: "ORDER_001",
-  paidLimit: 1,
+  lang: "MN",
+  logger: false,
 });
 
-// res.data.qrCode   — QR EMV raw текст
-// res.data.qrLink   — Happy Wallet deeplink URL
-```
-
-**Request параметрүүд:**
-
-| Нэр | Төрөл | Заавал | Тайлбар |
-|---|---|---|---|
-| `tranAmnt` | number | Тийм | Гүйлгээний дүн |
-| `tranDesc` | string | Тийм | Гүйлгээний тайлбар |
-| `invoiceId` | string | Тийм | Мерчантын дотоод нэхэмжлэхийн дугаар |
-| `tranCur` | string | Үгүй | Валютийн код (default: `"MNT"`) |
-| `paidLimit` | number | Үгүй | Төлөх боломжийн тоо (default: `1`) |
-
----
-
-### 2. Төлөв шалгах (CHECK)
-
-```typescript
-const res = await MOST.invoice.CHECK(qrCode);
-// эсвэл олон QR зэрэг шалгах
-const res = await MOST.invoice.CHECK([qrCode1, qrCode2]);
-
-// res.data[0].paymentId    — Төлбөрийн ID (төлөгдсөн үед)
-// res.data[0].tranAmnt     — Гүйлгээний дүн
-// res.data[0].responseCode — 0 = төлөгдсөн
-// res.data[0].responseDesc — Төлөвийн тайлбар
-```
-
----
-
-### 3. QR цуцлах (CANCEL)
-
-```typescript
-const res = await MOST.invoice.CANCEL(qrCode);
-
-// res.data[0].responseCode — 0 = амжилттай цуцлагдсан
-// res.data[0].responseDesc — "QR код цуцлагдаа!"
-```
-
----
-
-## Response код
-
-| responseCode | Утга |
-|---|---|
-| `0` | Амжилттай |
-| бусад | Алдаа — `responseDesc`-с тайлбар харах |
-
----
-
-## Бүрэн жишээ
-
-```typescript
-import MOST from "@togtokh.dev/most";
-
-MOST.init({
-  host: "STAGING",
-  apiKey: "xWTLEMvSJqnYoTHHpJByNFpROWWAUl",
-  payeeCode: "ME_402695",
-  posNo: "1",
-});
-
-async function pay() {
+async function run() {
+  // 2. Create a QR invoice
   const created = await MOST.invoice.CREATE({
     tranAmnt: 5000,
-    tranDesc: "Захиалга #1234",
+    tranDesc: "Order #1234",
     invoiceId: "ORDER_1234",
+    tranCur: "MNT", // optional, default "MNT"
+    paidLimit: 1, // optional, default 1
   });
 
   if (!created.success || !created.data) {
@@ -129,109 +47,174 @@ async function pay() {
     return;
   }
 
-  console.log("QR:", created.data.qrCode);
-  console.log("Link:", created.data.qrLink);
+  console.log("QR code:", created.data.qrCode); // raw EMV text
+  console.log("Deeplink:", created.data.qrLink); // Happy Wallet URL
 
+  // 3. Check payment status (accepts a single qrCode or an array)
   const checked = await MOST.invoice.CHECK(created.data.qrCode);
-  if (checked.data?.[0]?.responseCode === 0) {
-    console.log("Төлбөр амжилттай, ID:", checked.data[0].paymentId);
+  const item = checked.data?.[0];
+
+  if (item?.responseCode === 0) {
+    console.log("Paid, paymentId:", item.paymentId);
   } else {
-    console.log("Төлөв:", checked.data?.[0]?.responseDesc);
+    console.log("Status:", item?.responseDesc);
   }
 }
 
-pay();
+run();
 ```
 
----
+## API
 
-## Getting started (GitLab)
+The default export bundles `init` and `invoice`. The named exports `init`, `invoice`, `config`, `parseErr`, `logAxios` and `host` are also available individually.
 
-
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
-
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
-
-## Add your files
-
-* [Create](https://docs.gitlab.com/user/project/repository/web_editor/#create-a-file) or [upload](https://docs.gitlab.com/user/project/repository/web_editor/#upload-a-file) files
-* [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
-
-```
-cd existing_repo
-git remote add origin https://gitlab.com/togtokh-dev/library/payment/most.git
-git branch -M main
-git push -uf origin main
+```ts
+import MOST, { init, invoice, config, parseErr, logAxios, host } from "@togtokh.dev/most";
 ```
 
-## Integrate with your tools
+### `init(hostValue, body)`
 
-* [Set up project integrations](https://gitlab.com/togtokh-dev/library/payment/most/-/settings/integrations)
+```ts
+init(
+  hostValue: "STAGING" | "PROD" | string,
+  body: {
+    apiKey: string;      // MOST-issued API key
+    payeeCode: string;   // merchant code, e.g. "ME_402695"
+    posNo?: string;      // POS number, e.g. "1"
+    lang?: "MN" | "EN" | "ZH"; // response language
+    logger?: boolean;    // enable request/response logging
+  }
+): void;
+```
 
-## Collaborate with your team
+Configures the client. `hostValue` is the first argument and may be the string `"STAGING"`, `"PROD"`, or a custom base URL. The settings are stored on the shared `config` object.
 
-* [Invite team members and collaborators](https://docs.gitlab.com/user/project/members/)
-* [Create a new merge request](https://docs.gitlab.com/user/project/merge_requests/creating_merge_requests/)
-* [Automatically close issues from merge requests](https://docs.gitlab.com/user/project/issues/managing_issues/#closing-issues-automatically)
-* [Enable merge request approvals](https://docs.gitlab.com/user/project/merge_requests/approvals/)
-* [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+### `config`
 
-## Test and Deploy
+The mutable shared configuration object, populated by `init`.
 
-Use the built-in continuous integration in GitLab.
+```ts
+config: {
+  apiKey: string;              // MOST-issued API key
+  payeeCode: string;           // merchant code, e.g. "ME_402695"
+  posNo: string;               // POS number, e.g. "1"
+  host: string;                // API base URL
+  lang: "MN" | "EN" | "ZH";    // response language
+  logger: boolean;
+};
+```
 
-* [Get started with GitLab CI/CD](https://docs.gitlab.com/ci/quick_start/)
-* [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/user/application_security/sast/)
-* [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/topics/autodevops/requirements/)
-* [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/user/clusters/agent/)
-* [Set up protected environments](https://docs.gitlab.com/ci/environments/protected_environments/)
+### `host`
 
-***
+Predefined API base URLs.
 
-# Editing this README
+```ts
+host: {
+  STAGING: "http://202.21.105.150:40652/resources/merch/v1.0";
+  PROD: "https://j2me.mostmoney.mn:9092/resources/merch/v1.0";
+};
+```
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+### `invoice.CREATE(body)`
 
-## Suggestions for a good README
+Creates a QR invoice.
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+```ts
+invoice.CREATE(body: {
+  tranAmnt: number;    // transaction amount
+  tranDesc: string;    // transaction description
+  invoiceId: string;   // merchant internal invoice id
+  tranCur?: string;    // currency code, default "MNT"
+  paidLimit?: number;  // how many times the QR may be paid, default 1
+}): Promise<{
+  success: boolean;
+  message: string;
+  data?: {
+    qrCode: string;              // generated EMV QR code (raw text)
+    qrLink: string;              // Happy Wallet deeplink URL
+    qpayAccountId: string | null;
+    qpayQrCode: string | null;
+    shortUrl: string | null;
+    responseCode: number;        // 0 = success
+    responseDesc: string;
+  };
+}>;
+```
 
-## Name
-Choose a self-explaining name for your project.
+### `invoice.CHECK(qrCodes)`
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+Checks the payment status of one QR code or an array of QR codes.
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+```ts
+invoice.CHECK(qrCodes: string | string[]): Promise<{
+  success: boolean;
+  message: string;
+  data?: {
+    qrCode: string;
+    paymentId: string | null;
+    tranId: string | null;
+    tranDate: string | null;
+    tranAmnt: number | null;
+    invoiceId: string | null;
+    wallet: string | null;
+    loyaltyType: string | null;
+    loyaltyAmt: number | null;
+    custTkn: string | null;
+    loyaltyAcntCode: string | null;
+    bankCode: string | null;
+    bankTxnId: string | null;
+    responseCode: number;        // 0 = paid
+    responseDesc: string;
+  }[];
+}>;
+```
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+### `invoice.CANCEL(qrCodes)`
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+Cancels one QR code or an array of QR codes.
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+```ts
+invoice.CANCEL(qrCodes: string | string[]): Promise<{
+  success: boolean;
+  message: string;
+  data?: {
+    qrCode: string;
+    responseCode: number;        // 0 = successfully cancelled
+    responseDesc: string;
+  }[];
+}>;
+```
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+### `parseErr(error)`
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+```ts
+parseErr(error: unknown): string;
+```
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+Normalizes any thrown value into a human-readable message string.
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+### `logAxios(enabled, name)`
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+```ts
+logAxios(enabled: boolean, name: string): (data: AxiosMasterLoggerType) => void;
+```
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+Returns a logger function (from `axios-master`) used internally for request/response logging when `enabled` is true.
+
+## Response
+
+Every `invoice` method resolves to the same envelope:
+
+```ts
+Promise<{
+  success: boolean;   // whether the request succeeded
+  message: string;    // error message, or "success"
+  data?: ...;         // method-specific payload (see each method above)
+}>;
+```
+
+Within `data`, a `responseCode` of `0` indicates success; any other value is an error described by `responseDesc`.
 
 ## License
-For open source projects, say how it is licensed.
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+ISC

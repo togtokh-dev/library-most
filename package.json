@@ -1,7 +1,7 @@
 {
   "name": "@togtokh.dev/most",
-  "version": "0.1.2",
-  "description": "MOST QR payment API library",
+  "version": "0.1.3",
+  "description": "MOST Money QR payment gateway client for Node.js & TypeScript — invoice create and payment status checks.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
@@ -14,7 +14,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://gitlab.com/togtokh-dev/library/payment/most.git"
+    "url": "git+https://github.com/togtokh-dev/library-most.git"
   },
   "keywords": [
     "most",
@@ -25,12 +25,12 @@
   "author": "TOGTOKH.DEV",
   "license": "ISC",
   "bugs": {
-    "url": "https://gitlab.com/togtokh-dev/library/payment/most/issues"
+    "url": "https://github.com/togtokh-dev/library-most/issues"
   },
-  "homepage": "https://gitlab.com/togtokh-dev/library/payment/most/#readme",
+  "homepage": "https://github.com/togtokh-dev/library-most#readme",
   "dependencies": {
     "axios": "^1.6.2",
-    "axios-master": "^2.0.8",
+    "axios-master": "^2.1.0",
     "typescript": "^5.0.4"
   },
   "devDependencies": {
